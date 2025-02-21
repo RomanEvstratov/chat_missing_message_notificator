@@ -27,7 +27,7 @@ class ManagerNotifier:
         self.black_list = black_list
         self.our_users_ids = our_users_ids
 
-    async def notify_slack(self, chat):
+    async def notify_slack(self, chat: str) -> None:
         """Отправка уведомления в Slack."""
         try:
             response = self.slack_client.chat_postMessage(
@@ -38,7 +38,7 @@ class ManagerNotifier:
         except SlackApiError as e:
             print(f"Ошибка при отправке сообщения в Slack: {e.response['error']}")
 
-    async def check_chat_messages(self):
+    async def check_chat_messages(self) -> None:
         """Проверяет последние сообщения в чатах и отправляет уведомления при необходимости."""
         for chat in self.chat_list:
             if chat in self.black_list:

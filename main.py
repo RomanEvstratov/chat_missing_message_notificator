@@ -6,7 +6,7 @@ from app import settings
 from app.client import ManagerNotifier
 
 
-async def main():
+async def main() -> None:
     telegram_client = TelegramClient(
         settings.PHONE_NUMBER, settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
     )
