@@ -7,6 +7,10 @@ python3 -m venv .venv
 
 pip install -r requirements.txt
 
+## Задать переменные окружения (аналогично .env-example)
+
+cp .env-example .env
+
 ## Запуск скрипта
 
 python3 main.py
