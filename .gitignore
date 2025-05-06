@@ -1,2 +1,7 @@
-../.venv
-.env
+**/.venv/
+**/.env
+**/*.session
+**/*.session-journal
+.idea/
+.vscode/
+**/__pycache__/

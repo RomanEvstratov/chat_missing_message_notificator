@@ -1,29 +1,59 @@
 import asyncio
-from telethon import TelegramClient
-from slack_sdk import WebClient as SlackClient
+import logging
 
-from app import settings
-from app.client import ManagerNotifier
+import uvicorn
+from fastapi import FastAPI
+from sqladmin import Admin
+
+from src.admin import admin_views
+from src.admin.auth import authentication_backend
+from src.db.session import sync_engine
+from src.settings import settings, log
+from src.client import ManagerNotifier
+from src.slack_client import SlackClient
+from src.telegram_client import TGClient
+
+
+async def app_startup() -> None:
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    admin = Admin(app, sync_engine, authentication_backend=authentication_backend)
+    for view in admin_views:
+        admin.add_view(view)
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level=logging.INFO,
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+async def notificator_startup() -> None:
+    try:
+        notifier = ManagerNotifier(
+            telegram_client=TGClient(settings.TELEGRAM.PHONE_NUMBER.get_secret_value(), settings.TELEGRAM.TELEGRAM_API_ID, settings.TELEGRAM.TELEGRAM_API_HASH),
+            slack_client=SlackClient(settings.SLACK.SLACK_TOKEN.get_secret_value(), settings.SLACK.SLACK_CHANNEL),
+        )
+        log.info("Запуск нотификатора")
+        await notifier.check_chats()
+    except ValueError as exc:
+        log.info("Необходимо заполнить или завершить заполнение .env файла")
+    except Exception as exc:
+        log.info(f"Произошла непредвиденная ошибка: {exc}")
 
 
 async def main() -> None:
-    telegram_client = TelegramClient(
-        settings.PHONE_NUMBER, settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
-    )
-    slack_client = SlackClient(token=settings.SLACK_TOKEN)
-    telegram_client.start()
-
-    notifier = ManagerNotifier(
-        telegram_client=telegram_client,
-        slack_client=slack_client,
-        slack_channel=settings.SLACK_CHANNEL,
-        chat_list=settings.CHAT_LIST,
-        black_list=settings.CHAT_BLACK_LIST,
-        our_users_ids=settings.MANAGERS_IDS,
-    )
-
-    await notifier.check_chats()
-
+    tasks = [
+        asyncio.create_task(
+            app_startup(),
+            name="app-task",
+        ),
+        asyncio.create_task(
+            notificator_startup(),
+            name="notificator-task",
+        ),
+    ]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":
