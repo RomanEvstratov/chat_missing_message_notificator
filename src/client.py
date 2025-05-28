@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from src.db.repo import NotificatorRepository
 from src.db.session import async_session
+from src.exceptions import DefaultException
 from src.settings import settings, log
 from src.slack_client import SlackClient
 from src.telegram_client import TGClient
@@ -31,25 +32,32 @@ class ManagerNotifier:
                 log.info(f"Не было подано обратной связи для {len(chats)} диалогам")
                 return await self.slack_client.notify_about_chat(chats)
             log.info("Не было найдено проигнорированных диалогов")
+        except DefaultException as exc:
+            log.info(f"{exc}")
+            await self.slack_client.send_slack_message("Выход из сессии. Введите код")
         except Exception as exc:
             log.info(f"{exc}")
 
     async def check_chats(self) -> None:
         """Основной цикл проверки чатов."""
         while True:
-            time_to_sleep, now = self._check_time()
+            try:
+                time_to_sleep, now = self._check_time()
 
-            if not self.final_check_done and now.time() >= self.final_check_time:
-                log.info("Запуск финальной вечерней проверки...")
+                if not self.final_check_done and now.time() >= self.final_check_time:
+                    log.info("Запуск финальной вечерней проверки...")
+                    await self.check_chat_messages()
+                    self.final_check_done = True  # Отмечаем, что финальный чек выполнен
+
+                if time_to_sleep:
+                    self.final_check_done = False  # Сбрасываем флаг утром
+                    await self._sleep_until_morning(now)
+                else:
+                    await self.tg_client.start()
+                    await asyncio.sleep(settings.NOTIFICATOR.TIME_BETWEEN_CHECK)
                 await self.check_chat_messages()
-                self.final_check_done = True  # Отмечаем, что финальный чек выполнен
-
-            if time_to_sleep:
-                self.final_check_done = False  # Сбрасываем флаг утром
-                await self._sleep_until_morning(now)
-
-            await self.check_chat_messages()
-            await asyncio.sleep(1800)  # Проверяем чаты каждые 30 минут
+            except DefaultException as exc:
+                await self.slack_client.send_slack_message("Выход из сессии. Введите код")
 
     @staticmethod
     async def _sleep_until_morning(now: datetime) -> None:

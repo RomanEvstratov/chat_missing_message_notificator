@@ -1,8 +1,6 @@
 import logging
-import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -54,10 +52,12 @@ class TelegramSettings(DefaultSettings):
 class SlackSettings(DefaultSettings):
     SLACK_TOKEN: SecretStr
     SLACK_CHANNEL: str
+    SLACK_NOTIFY_ABOUT_AUTH: str | None = None
 
 class NotificatorSettings(DefaultSettings):
     TIME_TO_SLEEP: str
     TIME_TO_WOKE_UP: str
+    TIME_BETWEEN_CHECK: int = 1800
 
 class AuthSettings(DefaultSettings):
     ADMIN_USERNAME: str
