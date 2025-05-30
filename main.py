@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import uvicorn
+import uvloop
 from fastapi import FastAPI
 from sqladmin import Admin
 
@@ -30,12 +31,13 @@ async def app_startup() -> None:
 
 async def notificator_startup() -> None:
     try:
+        uvloop.install()
         notifier = ManagerNotifier(
             telegram_client=TGClient(settings.TELEGRAM.PHONE_NUMBER.get_secret_value(), settings.TELEGRAM.TELEGRAM_API_ID, settings.TELEGRAM.TELEGRAM_API_HASH),
             slack_client=SlackClient(settings.SLACK.SLACK_TOKEN.get_secret_value(), settings.SLACK.SLACK_CHANNEL),
         )
         log.info("Запуск нотификатора")
-        await notifier.check_chats()
+        await notifier.start()
     except ValueError as exc:
         log.info("Необходимо заполнить или завершить заполнение .env файла")
     except Exception as exc:

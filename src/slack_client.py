@@ -41,6 +41,6 @@ class SlackClient:
                 channel=channel,
                 text=message,
             )
-            log.info(f"Slack сообщение отправлено: channel: {channel}")
+            log.info(f"Slack сообщение отправлено: channel={channel}")
         except SlackApiError as e:
             log.info(f"Ошибка при отправке сообщения в Slack: {e.response['error']}")

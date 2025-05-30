@@ -18,6 +18,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
 
@@ -33,7 +39,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY . .
 
 # Expose the port that the application listens on.
-EXPOSE 8000
+EXPOSE 8001
 
 # Run the application.
 CMD python -m alembic upgrade head && python main.py

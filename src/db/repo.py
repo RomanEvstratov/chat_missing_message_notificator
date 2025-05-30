@@ -14,7 +14,7 @@ class NotificatorRepository:
         return result.all()
 
     @staticmethod
-    async def get_our_users(session: AsyncSession) -> Sequence[int]:
-        statement = select(OurUser.telegram_id)
+    async def get_our_users(session: AsyncSession) -> Sequence[str]:
+        statement = select(OurUser.username)
         result = await session.scalars(statement)
         return result.all()

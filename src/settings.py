@@ -5,7 +5,9 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__)
-ENV_FILE_PATH = BASE_DIR.parent.parent / ".env"
+ROOT_DIR = BASE_DIR.parent.parent
+ENV_FILE_PATH = ROOT_DIR / ".env"
+SESSION_FILE_PATH = ROOT_DIR / "tg_session.session"
 
 
 class DefaultSettings(BaseSettings):
